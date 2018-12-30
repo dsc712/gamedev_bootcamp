@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>First Game</title>
+    <script src="phaser.js"></script>
+    <style>
+        body {
+            margin: 0px;
+        }
+    </style>
+</head>
+<body>
+
+<script>
+
+    var game = new Phaser.Game(window.innerWidth , window.innerHeight, Phaser.AUTO, 'first-game', { preload, create, update, render });
+
+    var  player4,
+        space,
+        coins,
+        coin,
+        bomb,
+        bombs,
+        score = 0,
+        boom,
+        explode,
+        bullet,
+        bullets,
+        fire,
+        woman,
+        cursors;
+
+
+    function preload() {
+        game.load.image('jet', 'jet.png');
+        game.load.image('space', 'starfield2.png');
+        game.load.image('coin', 'coin.png');
+        game.load.image('bullet', 'coin.png');
+        game.load.image('bomb', 'Bomb.png');
+        game.load.audio('boom', ['metal.wav']);
+        game.load.audio('explode', ['explosion.wav']);
+        game.load.audio('fire', ['fire.wav']);
+        game.load.spritesheet('woman', 'sheet.png', 189, 230, 14 );
+    }
+
+
+    function create() {
+
+        game.physics.startSystem(Phaser.Physics.ARCADE); // simplest physics library
+
+        space = game.add.tileSprite(0, 0, window.innerWidth, window.innerHeight, 'space');
+
+        cursors = game.input.keyboard.createCursorKeys();
+
+        player4 = game.add.sprite(400, 400, 'jet' );
+        player4.anchor.set(0.5, 0.5);
+
+        // add coin and bomb groups
+        coins = game.add.group();
+        bombs = game.add.group();
+        bullets = game.add.group();
+
+
+        // add coin and player collision audio
+        boom = game.add.audio('boom');
+
+        // add bomb and player collision audio
+        explode = game.add.audio('explode');
+
+        // add bullet sound
+        fire = game.add.audio('fire');
+
+        // adding all coins
+        for ( let i=0; i<10; i++ ) {
+            coin = coins.create(game.rnd.between(0, window.innerWidth), game.rnd.between(0, window.innerHeight), 'coin');
+            coin.anchor.set(0.5, 0.5);
+            game.physics.arcade.enable(coin);
+            coin.body.mass = -1000;
+        }
+
+        // adding all bombs
+        for ( let i = 0; i < 3; i++) {
+            bomb = bombs.create(game.rnd.between(0, window.innerWidth), game.rnd.between(0, window.innerHeight), 'bomb');
+            bomb.anchor.set(0.5, 0.5);
+            game.physics.arcade.enable(bomb);
+            bomb.body.mass = -1000;
+        }
+
+        game.physics.arcade.enable(player4); // attaching physics to player
+
+        woman = game.add.sprite(200, 200, 'woman');
+        woman.animations.add('walk');
+        woman.animations.play('walk', 50, true);
+
+        game.physics.arcade.enable(woman);
+
+    }
+
+    // update function runs every delta times  ---> 30fps by default
+    function update(){
+
+        // --------------------------------------------------------------------//
+
+        // For constantly moving sprite upwards for -ve and downwards for positive
+        // player1.y = player1.y - 1;
+        // player2.y = player2.y- 1.2;
+        // player3.y = player3.y - 1.4;
+
+        //---------------------------------------------------------------------//
+
+        //---------------------------------------------------------------------//
+
+        // For moving sprite with cursor
+        // player4.x = game.input.x;
+        // player4.y = game.input.y;
+
+        //--------------------------------------------------------------------//
+
+
+        woman.body.velocity.x += 5;
+
+        game.physics.arcade.collide(player4, coins, handler, processor, this);
+        game.physics.arcade.collide(player4, bombs, bombHandler, bombProcessor, this);
+        game.physics.arcade.overlap(bullets, coins, bulletcoin_check, bulletcoin_process, this);
+        game.physics.arcade.overlap(bullets, bombs, bulletbomb_check, bulletbomb_process, this);
+
+        player4.body.velocity.x = ( game.input.x - player4.x )*5;
+        player4.body.velocity.y = ( game.input.y - player4.y )*6;
+
+        space.tilePosition.y += 10;
+
+        // calculating delta x and delta y
+        var a = game.input.x - player4.x;
+        var b = game.input.y - player4.y;
+
+        // jet movement logic
+        degree = ( Math.atan2(b, a) * 180/Math.PI + 90 );
+
+        player4.angle = degree;
+
+        if( score > 25 ) {
+            player4.scale.set(2);
+        }
+        if( score > 50 ) {
+            player4.scale.set(3);
+        }
+        if( score > 75 ) {
+            player4.scale.set(5);
+        }
+    }
+
+    function shoot() {
+        console.log("dhbsdfsd");
+
+        fire.play();
+
+        bullet = bullets.create(player4.x, player4.y, 'coin');
+        bullet.anchor.set(0.5, 0.5);
+        bullet.scale.setTo(.2);
+        game.physics.arcade.enable(bullet);
+        bullet.body.velocity.x = 1000 * Math.cos((player4.angle - 90) * Math.PI / 180);
+        bullet.body.velocity.y = 1000 * Math.sin((player4.angle - 90) * Math.PI / 180);
+
+    }
+
+    function render() {
+
+        if( score < -10 ) {
+            var response = prompt("Game Over, Start Again. Type Y for restart, or anything else to exit");
+            if( response === 'Y') {
+                location.reload();
+            } else{
+                close();
+            }
+        }
+
+        game.debug.text("scores : " + score, 100, 100);
+        if(cursors.up.isDown){
+            shoot();
+        }
+    }
+
+
+    function handler(p, c) {
+        return true;
+    }
+
+    function processor(p, c) {
+
+        // play boom sound
+        boom.play();
+
+        score++;
+        c.x = game.rnd.between(0, window.innerWidth);
+        c.y = game.rnd.between(0, window.innerHeight);
+    }
+
+    function bombHandler(p, c) {
+       return true;
+    }
+
+    function bombProcessor(p, c) {
+
+        explode.play();
+        score = score -10;
+
+        c.x = game.rnd.between(0, window.innerWidth);
+        c.y = game.rnd.between(0, window.innerHeight);
+    }
+
+    function bulletcoin_check(b, c) {
+        return true;
+    }
+
+    function bulletcoin_process(b, c) {
+        score++;
+
+        boom.play();
+        c.x = game.rnd.between(0, window.innerWidth);
+        c.y = game.rnd.between(0, window.innerHeight);
+    }
+
+    function bulletbomb_check(bb, c) {
+        return true;
+    }
+
+    function bulletbomb_process(bb, c) {
+        score = score - 10;
+        explode.play();
+        c.x = game.rnd.between(0, window.innerWidth);
+        c.y = game.rnd.between(0, window.innerHeight);
+    }
+
+</script>
+</body>
+</html>
