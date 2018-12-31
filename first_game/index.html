@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>First Game</title>
+    <title>Space Shooter</title>
     <script src="phaser.js"></script>
     <style>
         body {
@@ -23,6 +23,8 @@
         bomb,
         bombs,
         score = 0,
+        exit = 1,
+        maxScore = 0,
         boom,
         explode,
         bullet,
@@ -46,6 +48,18 @@
 
 
     function create() {
+
+        alert(`
+                              RULES
+                              =====
+               Use up arrow key ==> to fire bullets
+               Use mouse pointer ==> to move jet fighter
+               Hit coin with bullet or jet ==> to get +1 score
+               Hitting Bomb will ==> deduct score to -10
+
+                         if( score  <  -10 )
+                             " Game Over "
+               `);
 
         game.physics.startSystem(Phaser.Physics.ARCADE); // simplest physics library
 
@@ -100,6 +114,9 @@
     // update function runs every delta times  ---> 30fps by default
     function update(){
 
+        if( score > maxScore ) {
+            maxScore = score;
+        }
         // --------------------------------------------------------------------//
 
         // For constantly moving sprite upwards for -ve and downwards for positive
@@ -164,20 +181,31 @@
 
     }
 
+    function gameover() {
+        var response = prompt(`
+        Game Over, [  Max Score Reached By You was ${maxScore} ]
+                              Type Y to restart`);
+
+        if( response == 'Y') {
+            location.reload();
+        } else{
+            gameover();
+        }
+    }
     function render() {
 
-        if( score < -10 ) {
-            var response = prompt("Game Over, Start Again. Type Y for restart, or anything else to exit");
-            if( response === 'Y') {
-                location.reload();
-            } else{
-                close();
-            }
+
+        if( score < -10  && exit === 1) {
+
+            console.log("game over");
+            gameover();
+            exit = 0;
         }
 
         game.debug.text("scores : " + score, 100, 100);
         if(cursors.up.isDown){
             shoot();
+            cursors.up.isDown = false;
         }
     }
 
